@@ -33,17 +33,17 @@ impl Vad {
 
     pub fn compute(&mut self, samples: &[f32]) -> Result<VadResult> {
         let samples_tensor = Array2::from_shape_vec((1, samples.len()), samples.to_vec())?;
-        let samples_value = Value::from_array(samples_tensor)?;
-        let sr_value = Value::from_array(self.sample_rate_tensor.clone())?;
-        let h_value = Value::from_array(self.h_tensor.clone())?;
-        let c_value = Value::from_array(self.c_tensor.clone())?;
-        
+        let samples_value = Value::from_array(samples_tensor).map_err(|e| eyre::eyre!("{e}"))?;
+        let sr_value = Value::from_array(self.sample_rate_tensor.clone()).map_err(|e| eyre::eyre!("{e}"))?;
+        let h_value = Value::from_array(self.h_tensor.clone()).map_err(|e| eyre::eyre!("{e}"))?;
+        let c_value = Value::from_array(self.c_tensor.clone()).map_err(|e| eyre::eyre!("{e}"))?;
+
         let result = self.session.run(ort::inputs![
             "input" => samples_value,
             "sr" => sr_value,
             "h" => h_value,
             "c" => c_value
-        ])?;
+        ]).map_err(|e| eyre::eyre!("{e}"))?;
 
         // Update internal state tensors.
         let h_output = result.get("hn").unwrap().try_extract_tensor::<f32>().unwrap();
